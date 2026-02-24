@@ -1,0 +1,36 @@
+# Copyright (c) 2025 Amphion.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+"""
+Launch training scripts
+"""
+import os
+from omegaconf import DictConfig, OmegaConf
+from typing import Optional
+import hydra
+
+os.environ['HYDRA_FULL_ERROR'] = '1'
+
+def train(cfg):
+    if hasattr(cfg.trainer, "trainer"):
+        trainer = hydra.utils.instantiate(cfg.trainer.trainer)
+    else:
+        trainer = hydra.utils.instantiate(cfg.trainer)
+    trainer._build_dataloader(hydra.utils.instantiate(cfg.data.dataloader))
+    trainer.train_loop()
+
+
+@hydra.main(
+    version_base="1.3",
+    config_path="./esdcodec/conf",
+    config_name="esdcodec_train.yaml",
+)
+def main(cfg: DictConfig) -> Optional[float]:
+    # train the model
+    train(cfg)
+
+
+if __name__ == "__main__":
+    main(None)

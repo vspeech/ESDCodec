@@ -1,0 +1,119 @@
+
+# configs passed to gluster_dataset.py
+dataloader:
+  _target_: torch.utils.data.DataLoader
+  dataset: ${..datalist}
+  batch_size: null
+  num_workers: 2
+  prefetch_factor: 100
+
+url_opener:
+  _target_: esdcodec.dataset.processor.url_opener
+  _partial_: true
+
+tar_file_and_group:
+  _target_: esdcodec.dataset.processor.tar_file_and_group
+  _partial_: true
+
+gluster_opener:
+  _target_: esdcodec.dataset.processor.gluster_opener
+  _partial_: true
+  manual_dist_sampler: true # for iterabledataset + multi-GPU
+
+get_tokenizer:
+  _target_: whisper.tokenizer.get_tokenizer
+  _partial_: true
+  multilingual: true
+  num_languages: 100
+  language: 'en'
+  task: 'transcribe'
+
+tokenize:
+  _target_: esdcodec.dataset.processor.tokenize
+  _partial_: true
+  get_tokenizer: ${..get_tokenizer}
+  allowed_special: 'all'
+
+gluster_filter:
+  _target_: esdcodec.dataset.processor.gluster_filter
+  _partial_: true
+  is_emilia: true
+  max_length: 2000
+  min_length: 150
+  token_max_length: 300 # text token max length
+  ignore_text: true
+
+resample:
+  _target_: esdcodec.dataset.processor.resample
+  _partial_: true
+  resample_rate: ${trainer.sample_rate}
+
+shuffle:
+  _target_: esdcodec.dataset.processor.shuffle
+  _partial_: true
+  shuffle_size: 5000
+normalize: 
+  _target_: esdcodec.dataset.processor.normalize
+  _partial_: true
+  use_kana: true
+
+batch:
+  _target_: esdcodec.dataset.processor.batch
+  _partial_: true
+  batch_type: static
+  batch_size: ${trainer.batch_size}
+  ignore_text: true
+  max_frames_in_batch: null
+
+gluster_padding:
+  _target_: esdcodec.dataset.processor.gluster_padding
+  _partial_: true
+  use_spk_embedding: false # change to True during sft
+  return_speech: true
+  ignore_text: true
+
+
+# extract spectrogram for w2v
+w2v_feat_extractor:
+  _target_: transformers.SeamlessM4TFeatureExtractor.from_pretrained
+  _partial_: false
+  pretrained_model_name_or_path: ${machine.w2v_path}
+w2v_feature:
+  _target_: esdcodec.dataset.processor.w2v_feature
+  _partial_: true
+  feature_extractor: ${..w2v_feat_extractor}
+
+dataset:
+  _target_: esdcodec.dataset.emilia_hf.EmiliaDataset
+  is_debug: true
+
+datalist_tmp: 
+  _target_: esdcodec.dataset.dataset.DataList
+  lists: ${..dataset} # gluster dataset instance
+  shuffle: false
+  partition: false
+
+datalist:
+  _target_: esdcodec.dataset.dataset.prepare_gluster_dataset
+  data_type: "shard"
+  data_list_file: data.lst
+    #data_list: ${..datalist_tmp}
+  data_pipeline: ${..data_pipeline}
+  shuffle: true
+  partition: true
+
+segment_speech:
+  _target_: esdcodec.dataset.processor.segment_speech
+  _partial_: true
+  segment_length: 76800 
+
+data_pipeline:
+  - ${..url_opener}
+  - ${..tar_file_and_group}
+  - ${..gluster_filter} 
+  - ${..resample}
+  - ${..segment_speech}
+  - ${..w2v_feature}
+  - ${..shuffle}
+  - ${..batch}
+  - ${..gluster_padding}
