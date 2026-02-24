@@ -15,6 +15,10 @@ pip install esdcodec
 ## News
 - 2026-02-24: Release ESDCodec training and inference codes.
 
+## Model List
+| Model| Frame Rate| Training Dataset |Discription|
+|:----|:----:|:----:|:----|
+|[esdcodec_25hz_16384_1024](https://huggingface.co/vspeech/ESDCodec/tree/main)|25Hz|Emilia(English and Chinese)|Adopt enhanced semantic quantizer and conditioned decoder network|
 
 ## Inference
 1. First, download checkpoint and config to local: 
