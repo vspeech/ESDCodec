@@ -24,7 +24,7 @@ pip install esdcodec
 1. First, download checkpoint and config to local: 
 ```
 huggingface-cli download facebook/w2v-bert-2.0 --local-dir w2v-bert-2.0
-huggingface-cli download vspeech/esdcodec esdcodec_25hz_16384_1024.safetensors w2vbert2_mean_var_stats_emilia.pt --local-dir esdcodec_ckpts
+huggingface-cli download vspeech/ESDCodec esdcodec_25hz_16384_1024.safetensors w2vbert2_mean_var_stats_emilia.pt --local-dir esdcodec_ckpts
 ```
 
 2. To run example inference:
